@@ -2,7 +2,7 @@
 # Contributor: measles
 
 pkgname=rinx
-pkgver=0.5.0
+pkgver=0.5.1
 pkgrel=1
 pkgdesc="A console-based FB2 reader with library management, bookmarks, footnotes and i18n support"
 arch=('x86_64' 'aarch64')

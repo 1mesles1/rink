@@ -54,18 +54,20 @@ pub struct Library {
 fn default_width() -> u16 { 70 }
 
 impl Library {
-    pub fn load() -> Self {
-        let path = dirs::config_dir()
-            .unwrap_or_default()
-            .join("rinx")
-            .join("library.json");
-        if let Ok(content) = std::fs::read_to_string(path) {
-            serde_json::from_str(&content).unwrap_or_else(|_| Self::new())
-        } else {
-            Self::new()
-        }
-    }
-
+pub fn load() -> Self {
+    let path = dirs::config_dir()
+        .unwrap_or_default()
+        .join("rinx")
+        .join("library.json");
+    let mut lib = if let Ok(content) = std::fs::read_to_string(path) {
+        serde_json::from_str(&content).unwrap_or_else(|_| Self::new())
+    } else {
+        Self::new()
+    };
+    // Удаляем записи, указывающие на отсутствующие файлы
+    lib.books.retain(|p, _| p.exists());
+    lib
+}
     pub fn new() -> Self {
         Self {
             scan_paths: vec![std::env::current_dir().unwrap_or_default()],

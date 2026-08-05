@@ -1,7 +1,6 @@
 // src/ui/reader_popups.rs
 use crate::app::App;
 use crate::i18n::I18n;
-use crate::layout;
 use ratatui::layout::Alignment;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph};
@@ -102,23 +101,24 @@ pub fn render_book_info(f: &mut Frame, app: &App, border_style: Style, border_ty
     info_text.push(Line::from(""));
 
     let target_w = area.width.saturating_sub(8) as usize;
+if let Some(err) = &app.parser.parse_error {
+    info_text.push(Line::from(format!("  {}", err)));
+} else if app.parser.meta.annotation.is_empty() {
+    info_text.push(Line::from(format!("  {}", I18n::t(lang, "no_description"))));
+} else {
     let raw_annotation = &app.parser.meta.annotation;
-    if raw_annotation.is_empty() {
-        info_text.push(Line::from(format!("  {}", I18n::t(lang, "no_description"))));
-    } else {
-        let ann_wrapped = textwrap::fill(raw_annotation, target_w);
-        let lines: Vec<_> = ann_wrapped.lines().collect();
-        let len = lines.len();
-        for (i, line) in lines.into_iter().enumerate() {
-            let justified = if i < len - 1 {
-                layout::justify_line(line, target_w)
-            } else {
-                line.to_string()
-            };
-            info_text.push(Line::from(format!("  {}", justified)));
-        }
+    let ann_wrapped = textwrap::fill(raw_annotation, target_w);
+    let lines: Vec<_> = ann_wrapped.lines().collect();
+    let len = lines.len();
+    for (i, line) in lines.into_iter().enumerate() {
+        let justified = if i < len - 1 {
+            crate::layout::justify_line(line, target_w)
+        } else {
+            line.to_string()
+        };
+        info_text.push(Line::from(format!("  {}", justified)));
     }
-
+}
     let info_widget = Paragraph::new(info_text)
         .block(
             Block::default()

@@ -39,23 +39,26 @@ pub struct FB2Parser {
     pub encoding: String,
     pub footnotes: Vec<FootnoteInfo>,
     pub toc: Vec<(String, usize)>,
+    pub parse_error: Option<String>,
 }
 
 impl FB2Parser {
-    pub fn new(path: &Path) -> Self {
-        let mut parser = Self {
-            path: path.to_path_buf(),
-            paragraphs: Vec::new(),
-            meta: BookMeta::default(),
-            encoding: "utf-8".to_string(),
-            footnotes: Vec::new(),
-            toc: Vec::new(),
-        };
-        if let Err(e) = parser.execute_parse() {
-            eprintln!("Ошибка автоматического парсинга файла {:?}: {}", path, e);
-        }
-        parser
+pub fn new(path: &Path) -> Self {
+    let mut parser = Self {
+        path: path.to_path_buf(),
+        paragraphs: Vec::new(),
+        meta: BookMeta::default(),
+        encoding: "utf-8".to_string(),
+        footnotes: Vec::new(),
+        toc: Vec::new(),
+        parse_error: None,   // инициализация
+    };
+    if let Err(e) = parser.execute_parse() {
+        parser.parse_error = Some(format!("Ошибка парсинга: {}", e));
+        eprintln!("Ошибка автоматического парсинга файла {:?}: {}", path, e);
     }
+    parser
+}
 
     fn execute_parse(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let mut file = File::open(&self.path)?;
@@ -116,6 +119,8 @@ impl FB2Parser {
         let mut footnote_order: Vec<String> = Vec::new();
         let mut pending_footnote_num: Option<usize> = None;
         let mut in_link = false;
+
+let mut series_entries: Vec<(String, Option<i32>)> = Vec::new();
 
         loop {
             match xml_reader.read_event_into(&mut buf) {
@@ -178,22 +183,29 @@ impl FB2Parser {
                         _ => {}
                     }
                 }
-                Ok(Event::Empty(ref e)) => {
-                    let raw_tag = String::from_utf8_lossy(e.name().as_ref()).to_string().to_lowercase();
-                    if raw_tag.split(':').last().unwrap_or(&raw_tag) == "sequence" {
-                        for attr in e.attributes().flatten() {
-                            match String::from_utf8_lossy(attr.key.as_ref()).to_lowercase().as_str() {
-                                "name" => self.meta.series = String::from_utf8_lossy(&attr.value).into_owned(),
-                                "number" => {
-                                    if let Ok(num_str) = std::str::from_utf8(&attr.value) {
-                                        self.meta.sequence_number = num_str.parse().unwrap_or(0);
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+Ok(Event::Empty(ref e)) => {
+    let raw_tag = String::from_utf8_lossy(e.name().as_ref()).to_string().to_lowercase();
+    if raw_tag.split(':').last().unwrap_or(&raw_tag) == "sequence" {
+        let mut name = String::new();
+        let mut number: Option<i32> = None;
+        for attr in e.attributes().flatten() {
+            let key = String::from_utf8_lossy(attr.key.as_ref()).to_lowercase();
+            let val = String::from_utf8_lossy(&attr.value);
+            match key.as_str() {
+                "name" => name = val.into_owned(),
+                "number" => {
+                    if let Ok(num_str) = std::str::from_utf8(&attr.value) {
+                        number = num_str.parse().ok();
                     }
                 }
+                _ => {}
+            }
+        }
+        if !name.is_empty() {
+            series_entries.push((name, number));
+        }
+    }
+}
                 Ok(Event::End(ref e)) => {
                     let raw_tag = String::from_utf8_lossy(e.name().as_ref()).to_string().to_lowercase();
                     let tag_name = raw_tag.split(':').last().unwrap_or(&raw_tag).to_string();
@@ -311,6 +323,28 @@ impl FB2Parser {
                     number: order + 1,
                 });
             }
+        }
+
+        // Формируем строку цикла из всех найденных sequence
+        if !series_entries.is_empty() {
+            let mut parts = Vec::new();
+            for (name, num) in &series_entries {
+                let part = if let Some(n) = num {
+                    format!("{} ({})", name, n)
+                } else {
+                    name.clone()
+                };
+                parts.push(part);
+            }
+            self.meta.series = parts.join(" / ");
+            // Сохраняем номер из первого цикла для обратной совместимости
+            if let Some((_, first_num)) = series_entries.first() {
+                self.meta.sequence_number = first_num.unwrap_or(0);
+            }
+        } else {
+            // Если тегов sequence не было, оставляем как есть (пусто)
+            self.meta.series = String::new();
+            self.meta.sequence_number = 0;
         }
 
         if !self.footnotes.is_empty() {

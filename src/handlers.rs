@@ -540,6 +540,14 @@ fn handle_library_open(app: &mut App, _lang: Language) -> anyhow::Result<()> {
         .cloned()
         .collect();
     if let Some(selected_path) = filtered.get(app.library_index).cloned() {
+        if !selected_path.exists() {
+            app.library.books.remove(&selected_path);
+            app.library.save();
+            // Обновляем список результатов
+            app.library_results = app.library.books.keys().cloned().collect();
+            app.library_index = app.library_index.min(app.library_results.len().saturating_sub(1));
+            return Ok(());
+        }
         if let Some(old_book) = app.library.books.get_mut(&app.filename) {
             old_book.last_read_line = app.scroll;
         }
