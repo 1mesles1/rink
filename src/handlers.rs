@@ -261,19 +261,19 @@ fn handle_reader_key(
         {
             if app.scroll > 0 { app.scroll -= 1; }
         }
-        KeyCode::Left | KeyCode::PageUp
-            if !app.show_toc && !app.show_help && !app.show_info =>
-        {
-            let v_height = terminal.size()?.height.saturating_sub(3) as usize;
-            app.scroll = app.scroll.saturating_sub(v_height);
-        }
-        KeyCode::Right | KeyCode::PageDown | KeyCode::Char(' ')
-            if !app.show_toc && !app.show_help && !app.show_info =>
-        {
-            let v_height = terminal.size()?.height.saturating_sub(3) as usize;
-            let max_scroll = app.lines.len().saturating_sub(v_height);
-            app.scroll = (app.scroll + v_height).min(max_scroll);
-        }
+KeyCode::Left | KeyCode::PageUp | KeyCode::Char('h')
+    if !app.show_toc && !app.show_help && !app.show_info =>
+{
+    let v_height = terminal.size()?.height.saturating_sub(3) as usize;
+    app.scroll = app.scroll.saturating_sub(v_height);
+}
+KeyCode::Right | KeyCode::PageDown | KeyCode::Char(' ') | KeyCode::Char('l')
+    if !app.show_toc && !app.show_help && !app.show_info =>
+{
+    let v_height = terminal.size()?.height.saturating_sub(3) as usize;
+    let max_scroll = app.lines.len().saturating_sub(v_height);
+    app.scroll = (app.scroll + v_height).min(max_scroll);
+}
         KeyCode::Home if !app.show_toc && !app.show_help && !app.show_info => app.scroll = 0,
         KeyCode::End if !app.show_toc && !app.show_help && !app.show_info => {
             let v_height = terminal.size()?.height.saturating_sub(3) as usize;
@@ -372,6 +372,8 @@ fn handle_reader_key(
                 app.width = (app.width + 5).min(100);
             }
             app.width_cache = 0;
+            app.library.width = app.width;
+            app.library.save();
         }
 
         // Закрытие окон
@@ -615,41 +617,25 @@ fn handle_input_url_enter(app: &mut App, lang: Language) -> anyhow::Result<()> {
 fn handle_settings_enter(
     app: &mut App,
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
-    lang: Language,
+    _lang: Language,
 ) -> anyhow::Result<()> {
     match app.config_index {
         0 => {
             app.state = AppState::InputPath;
             app.input_buffer.clear();
         }
-        1 => {
-            app.is_searching = false;
-            app.state = AppState::Scanning;
-            terminal.draw(|f| {
-                let block = ratatui::widgets::Block::default()
-                    .borders(ratatui::widgets::Borders::ALL)
-                    .border_type(ratatui::widgets::BorderType::Rounded)
-                    .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan));
-                f.render_widget(block, f.area());
-                let area = crate::ui::centered_rect(40, 15, f.area());
-                f.render_widget(ratatui::widgets::Clear, area);
-                let scan_msg = I18n::t(lang, "scanning_title") + "\n      ***      ";
-                f.render_widget(
-                    ratatui::widgets::Paragraph::new(scan_msg)
-                        .alignment(ratatui::layout::Alignment::Center)
-                        .block(
-                            ratatui::widgets::Block::default()
-                                .borders(ratatui::widgets::Borders::ALL)
-                                .border_type(ratatui::widgets::BorderType::Double)
-                                .style(ratatui::style::Style::default().fg(ratatui::style::Color::Yellow)),
-                        ),
-                    area,
-                );
-            })?;
-            app.library.scan();
-            app.state = AppState::Config;
-            app.library.save();
-        }
+1 => {
+    app.is_searching = false;
+    app.state = AppState::Scanning;
+    let popup_border_style = app.get_popup_border_style();
+    let popup_border_type = crate::ui::border_style_to_border_type(app.library.popup_border);
+    terminal.draw(|f| {
+        crate::ui::settings::render_scanning(f, app, popup_border_style, popup_border_type);
+    })?;
+    app.library.scan();
+    app.state = AppState::Config;
+    app.library.save();
+}
         2 => {
             app.library.books.clear();
             app.library.save();

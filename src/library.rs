@@ -47,7 +47,11 @@ pub struct Library {
     pub language: Language,
     pub main_border: BorderStyle,
     pub popup_border: BorderStyle,
+    #[serde(default = "default_width")]
+    pub width: u16,
 }
+
+fn default_width() -> u16 { 70 }
 
 impl Library {
     pub fn load() -> Self {
@@ -72,6 +76,7 @@ impl Library {
             language: Language::Ru,
             main_border: BorderStyle::Rounded,
             popup_border: BorderStyle::Double,
+            width: 70,
         }
     }
 

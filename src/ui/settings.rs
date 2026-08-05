@@ -147,19 +147,21 @@ pub fn render_input_url(f: &mut Frame, app: &App, border_style: Style, border_ty
     f.render_widget(input_widget, area);
 }
 
-pub fn render_scanning(f: &mut Frame, app: &App) {
+pub fn render_scanning(f: &mut Frame, app: &App, border_style: Style, border_type: ratatui::widgets::BorderType) {
     let lang = app.library.language;
     let area = super::centered_rect(40, 10, f.area());
     f.render_widget(Clear, area);
     let scan_msg = I18n::t(lang, "scanning_msg")
         .replace("{}", &app.library.books.len().to_string());
     f.render_widget(
-        Paragraph::new(scan_msg).alignment(Alignment::Center).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(ratatui::widgets::BorderType::Double)
-                .style(Style::default().fg(Color::Yellow)),
-        ),
+        Paragraph::new(scan_msg)
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(border_type)
+                    .style(border_style),
+            ),
         area,
     );
 }

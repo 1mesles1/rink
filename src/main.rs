@@ -74,7 +74,7 @@ fn main() -> Result<()> {
         filepath,
         current_scroll,
     );
-
+    app.width = app.library.width;
     let result = app.run(&mut terminal);
 
     disable_raw_mode()?;

@@ -11,11 +11,11 @@ use ratatui::text::{Line, Span};
 mod status_bar;
 mod library;
 mod reader_popups;
-mod settings;
+pub mod settings;
 
 // ---- Общие утилиты ----
 
-fn border_style_to_border_type(style: crate::library::BorderStyle) -> ratatui::widgets::BorderType {
+pub fn border_style_to_border_type(style: crate::library::BorderStyle) -> ratatui::widgets::BorderType {
     match style {
         crate::library::BorderStyle::Plain => ratatui::widgets::BorderType::Plain,
         crate::library::BorderStyle::Double => ratatui::widgets::BorderType::Double,
@@ -283,7 +283,7 @@ pub fn render(f: &mut Frame, app: &mut App) {
     }
 
     if let AppState::Scanning = app.state {
-        settings::render_scanning(f, app);
+        settings::render_scanning(f, app, popup_border_style, popup_border_type);
     }
 
     if let AppState::Bookmarks = app.state {

@@ -134,36 +134,36 @@ pub fn render_book_info(f: &mut Frame, app: &App, border_style: Style, border_ty
 
 pub fn render_help(f: &mut Frame, app: &App, border_style: Style, border_type: ratatui::widgets::BorderType) {
     let lang = app.library.language;
-    let area = super::centered_rect(30, 70, f.area());
+    let area = super::centered_rect(25, 70, f.area());
     f.render_widget(Clear, area);
 
     let help_text = vec![
-        I18n::t(lang, "help_controls"),
-        I18n::t(lang, "help_quit"),
-        I18n::t(lang, "help_settings"),
-        I18n::t(lang, "help_library"),
-        I18n::t(lang, "help_search_text"),
-        I18n::t(lang, "help_search_next"),
-        I18n::t(lang, "help_info"),
-        I18n::t(lang, "help_toc"),
-        I18n::t(lang, "help_theme"),
-        I18n::t(lang, "help_footnote"),
-        "".to_string(),
-        I18n::t(lang, "help_library_title"),
-        I18n::t(lang, "help_sort"),
-        I18n::t(lang, "help_search_lib"),
-        I18n::t(lang, "help_open"),
-        "".to_string(),
-        I18n::t(lang, "help_bookmarks_title"),
-        I18n::t(lang, "help_bookmark_set"),
-        I18n::t(lang, "help_bookmark_list"),
-        I18n::t(lang, "help_bookmark_del"),
-        "".to_string(),
-        I18n::t(lang, "help_nav_title"),
-        I18n::t(lang, "help_down"),
-        I18n::t(lang, "help_page"),
-        I18n::t(lang, "help_width"),
-        I18n::t(lang, "help_home_end"),
+  I18n::t(lang, "help_controls"),
+  I18n::t(lang, "help_quit"),
+  I18n::t(lang, "help_settings"),
+  I18n::t(lang, "help_library"),
+  I18n::t(lang, "help_search_text"),
+  I18n::t(lang, "help_search_next"),
+  I18n::t(lang, "help_info"),
+  I18n::t(lang, "help_toc"),
+  I18n::t(lang, "help_theme"),
+  I18n::t(lang, "help_footnote"),
+  "".to_string(),
+  I18n::t(lang, "help_library_title"),
+  I18n::t(lang, "help_sort"),
+  I18n::t(lang, "help_search_lib"),
+  I18n::t(lang, "help_open"),
+  "".to_string(),
+  I18n::t(lang, "help_bookmarks_title"),
+  I18n::t(lang, "help_bookmark_set"),
+  I18n::t(lang, "help_bookmark_list"),
+  I18n::t(lang, "help_bookmark_del"),
+  "".to_string(),
+  I18n::t(lang, "help_nav_title"),
+  I18n::t(lang, "help_down"),
+  I18n::t(lang, "help_page"),
+  I18n::t(lang, "help_width"),
+  I18n::t(lang, "help_home_end"),
     ];
 
     let display_help: Vec<Line> = help_text
